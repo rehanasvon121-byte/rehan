@@ -28,6 +28,7 @@ const shiftLabels: Record<Shift,string> = {pagi:'PAGI',sore:'SORE',malam:'MALAM'
 const shiftColors = (s:Shift, settings:Settings) => s==='pagi'?settings.pagi:s==='sore'?settings.sore:s==='malam'?settings.malam:settings.libur
 
 function App() {
+  useEffect(() => { const timer = window.setTimeout(() => setShowSplash(false), 1800); return () => window.clearTimeout(timer) }, [])
   const now = new Date()
   const [year,setYear] = useState(now.getFullYear())
   const [month,setMonth] = useState(now.getMonth())
@@ -42,6 +43,7 @@ function App() {
   const [rangeEnd,setRangeEnd] = useState(`${now.getFullYear()}-${String(now.getMonth()+2>12?1:now.getMonth()+2).padStart(2,'0')}-20`)
   const [notice,setNotice] = useState('')
   const [showAbout,setShowAbout] = useState(false)
+  const [showSplash,setShowSplash] = useState(true)
   const previewRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -195,6 +197,21 @@ function App() {
     '--radius':`${settings.radius}px`,'--cell-gap':`${settings.gap}px`,'--font-size':`${settings.fontSize}px`
   } as React.CSSProperties
 
+  if (showSplash) {
+    return <div className="splash-screen" role="status" aria-label="Memuat ShiftSnap">
+      <div className="splash-orbit splash-orbit-top"/>
+      <div className="splash-orbit splash-orbit-bottom"/>
+      <div className="splash-content">
+        <div className="splash-logo"><CalendarDays size={58} strokeWidth={2.2}/><span className="splash-check"><Check size={25} strokeWidth={3}/></span><i className="splash-spark spark-one"/><i className="splash-spark spark-two"/><i className="splash-spark spark-three"/></div>
+        <div className="splash-title">Shift<span>Snap</span></div>
+        <p className="splash-tagline">Atur jadwal kerja dengan lebih mudah.</p>
+        <div className="splash-loading"><span/></div>
+        <div className="splash-loading-label">Memuat aplikasi...</div>
+      </div>
+      <div className="splash-credit"><span>♥</span> Created by Rehan</div>
+    </div>
+  }
+
   return <div className="app-shell">
     <header className="topbar">
       <div className="brand"><div className="brand-mark"><CalendarDays size={21}/></div><div><strong>ShiftSnap</strong><span>Studio Jadwal Kerja</span></div></div>
@@ -250,7 +267,7 @@ function App() {
                 </div>
               })}</div>
               {settings.showLegend&&<div className="art-legend">{(['pagi','sore','malam','libur'] as Shift[]).map(s=><span key={s}><i style={{background:settings[s]}}/>{shiftLabels[s]}</span>)}</div>}
-              <div className="art-footer"><span>{settings.owner?`Dibuat untuk ${settings.owner}`:'JADWAL KERJA · LEBIH TERATUR'}</span><span>{shiftCounts.pagi}P · {shiftCounts.sore}S · {shiftCounts.malam}M · {shiftCounts.libur}L</span></div>
+              <div className="art-footer"><span>{settings.owner?`Dibuat untuk ${settings.owner}`:'JADWAL KERJA · LEBIH TERATUR'}</span><span>{shiftCounts.pagi}P · {shiftCounts.sore}S · {shiftCounts.malam}M · {shiftCounts.libur}L</span><span className="export-credit">Created by Rehan</span></div>
             </div>
           </div>
           <div className="download-panel"><div className="download-copy"><div className="download-icon"><Download size={19}/></div><div><strong>Jadwal siap diunduh</strong><span>PNG resolusi tinggi · {rangeMode?'Jadwal satu periode':format==='wallpaper'?'Wallpaper 9:16':'Kalender bulanan'}</span></div></div><button className="primary-button download-button" disabled={!rangeValid} onClick={downloadImage}><Download size={17}/> Download PNG</button></div>

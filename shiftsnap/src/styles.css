@@ -30,3 +30,29 @@
 .about-dialog p{line-height:1.65;color:#bdc9da;font-size:14px}
 .about-version{font-size:12px;color:#8292a9;margin:18px 0 22px}
 @media(max-width:520px){.footer-credit{gap:8px}.about-dialog{padding:26px 22px}}
+
+/* ShiftSnap opening splash screen */
+.splash-screen{position:fixed;inset:0;z-index:2000;min-height:100dvh;overflow:hidden;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 42%,#16253b 0%,#0c172b 52%,#081222 100%);color:#f8fafc;font-family:inherit}
+.splash-orbit{position:absolute;width:72vw;height:42vw;min-width:430px;min-height:250px;border:1px solid transparent;pointer-events:none;opacity:.9}
+.splash-orbit-top{top:-18%;left:-24%;border-bottom-color:#9de85c;transform:rotate(-28deg);border-radius:50%}
+.splash-orbit-bottom{bottom:-22%;right:-22%;border-top-color:#9de85c;transform:rotate(-28deg);border-radius:50%}
+.splash-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px;width:min(100%,560px);animation:splash-appear .55s ease-out both}
+.splash-logo{position:relative;width:112px;height:112px;border-radius:30px;display:grid;place-items:center;color:#c7f36a;background:linear-gradient(145deg,#1b3442,#132337);border:1px solid #c7f36a35;box-shadow:0 0 50px #a7e95a18;margin-bottom:27px}
+.splash-check{position:absolute;right:4px;bottom:4px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#bdf06a;color:#102033;border:4px solid #102033}
+.splash-spark{position:absolute;width:9px;height:9px;border-radius:50%;background:#bdf06a;box-shadow:0 0 12px #bdf06a80}
+.spark-one{top:9px;right:13px}.spark-two{top:-3px;right:37px;width:6px;height:6px}.spark-three{top:31px;right:-5px;width:5px;height:5px}
+.splash-title{font-size:clamp(42px,10vw,66px);font-weight:850;letter-spacing:-.055em;line-height:1.1;color:#f8fafc}
+.splash-title span{color:#bdf06a}
+.splash-tagline{font-size:clamp(14px,3.8vw,18px);color:#aabbd2;margin:20px 0 0}
+.splash-loading{margin-top:70px;width:210px;height:7px;border-radius:99px;background:#26364d;overflow:hidden}
+.splash-loading span{display:block;width:58%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#d0f66c,#63d99c);animation:splash-progress 1.45s ease-in-out infinite alternate}
+.splash-loading-label{font-size:13px;color:#94a8c4;margin-top:12px}
+.splash-credit{position:absolute;bottom:max(30px,env(safe-area-inset-bottom));left:0;right:0;display:flex;align-items:center;justify-content:center;gap:10px;color:#c7d4e7;font-size:14px}
+.splash-credit span{font-size:20px;color:#bdf06a}
+@keyframes splash-appear{from{opacity:0;transform:translateY(9px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes splash-progress{from{transform:translateX(-15%)}to{transform:translateX(75%)}}
+@media(max-height:650px){.splash-logo{width:80px;height:80px;border-radius:23px;margin-bottom:18px}.splash-logo>svg{width:44px;height:44px}.splash-loading{margin-top:35px}.splash-credit{bottom:15px}}
+@media(prefers-reduced-motion:reduce){.splash-content,.splash-loading span{animation:none}}
+
+/* Creator credit is inside the exported artwork, so it appears in downloaded PNGs. */
+.art-footer .export-credit{font-size:10px;letter-spacing:.04em;font-weight:700;opacity:.78;white-space:nowrap}
