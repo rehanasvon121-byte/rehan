@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toPng } from 'html-to-image'
-import { CalendarDays, Download, Palette, RotateCcw, Save, Upload, WandSparkles, ChevronLeft, ChevronRight, ClipboardPaste, Image, Check, Moon, Sun, Coffee } from 'lucide-react'
+import { CalendarDays, Download, Palette, RotateCcw, Save, Upload, WandSparkles, ChevronLeft, ChevronRight, ClipboardPaste, Image, Check, Moon, Sun, Coffee, X, Info } from 'lucide-react'
 
 type Shift = 'pagi' | 'sore' | 'malam' | 'libur'
 type Schedule = Record<string, Shift>
@@ -41,6 +41,7 @@ function App() {
   const [rangeStart,setRangeStart] = useState(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-20`)
   const [rangeEnd,setRangeEnd] = useState(`${now.getFullYear()}-${String(now.getMonth()+2>12?1:now.getMonth()+2).padStart(2,'0')}-20`)
   const [notice,setNotice] = useState('')
+  const [showAbout,setShowAbout] = useState(false)
   const previewRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -258,7 +259,8 @@ function App() {
           <div className="tip-card"><div className="tip-icon"><Palette size={18}/></div><div><strong>Panduan</strong><p>Pilih tanggal pada kalender, tentukan jenis shift, lalu periksa hasilnya pada pratinjau. Jadwal tersimpan otomatis di browser perangkat ini.</p></div></div>
         </section>
       </div>
-      <footer className="footer"><span>ShiftSnap © {now.getFullYear()}</span><span>Dibuat untuk jadwal kerja yang lebih rapi.</span></footer>
+      <footer className="footer"><span>ShiftSnap © {now.getFullYear()}</span><span className="footer-credit">Created by Rehan <button type="button" className="about-link" onClick={()=>setShowAbout(true)}><Info size={13}/> Tentang aplikasi</button></span></footer>
+      {showAbout&&<div className="about-overlay" role="presentation" onClick={()=>setShowAbout(false)}><section className="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-title" onClick={e=>e.stopPropagation()}><button type="button" className="about-close" onClick={()=>setShowAbout(false)} aria-label="Tutup"><X size={18}/></button><div className="about-logo"><CalendarDays size={25}/></div><div className="about-eyebrow">TENTANG APLIKASI</div><h2 id="about-title">ShiftSnap</h2><p className="about-credit">Created by Rehan</p><p>ShiftSnap membantu Anda menyusun jadwal kerja, menyesuaikan tampilan, dan mengunduh jadwal sebagai gambar agar mudah disimpan dan dibagikan.</p><div className="about-version">Studio Jadwal Kerja · Versi 1.0</div><button type="button" className="primary-button full" onClick={()=>setShowAbout(false)}>Tutup</button></section></div>}
     </main>
   </div>
 }
