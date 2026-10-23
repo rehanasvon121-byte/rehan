@@ -28,7 +28,7 @@ const shiftLabels: Record<Shift,string> = {pagi:'PAGI',sore:'SORE',malam:'MALAM'
 const shiftColors = (s:Shift, settings:Settings) => s==='pagi'?settings.pagi:s==='sore'?settings.sore:s==='malam'?settings.malam:settings.libur
 
 function App() {
-  useEffect(() => { const timer = window.setTimeout(() => setShowSplash(false), 1800); return () => window.clearTimeout(timer) }, [])
+  useEffect(() => { const timer = window.setTimeout(() => setShowSplash(false), 4500); return () => window.clearTimeout(timer) }, [])
   const now = new Date()
   const [year,setYear] = useState(now.getFullYear())
   const [month,setMonth] = useState(now.getMonth())
@@ -208,7 +208,7 @@ function App() {
         <div className="splash-loading"><span/></div>
         <div className="splash-loading-label">Memuat aplikasi...</div>
       </div>
-      <div className="splash-credit"><span>♥</span> Created by Rehan</div>
+      <div className="splash-credit">Created by Rehan</div>
     </div>
   }
 
