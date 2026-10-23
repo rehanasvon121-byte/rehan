@@ -120,6 +120,18 @@ function App() {
     setNotice('Jadwal dan desain berhasil disimpan di browser ini.')
   }
   const resetDesign = () => { setSettings(defaults); setNotice('Desain dikembalikan ke pengaturan awal.') }
+  const resetSchedule = () => {
+    const hasSchedule = Object.keys(schedule).length > 0
+    if (!hasSchedule) {
+      setNotice('Jadwal sudah kosong. Anda dapat langsung memasukkan jadwal baru.')
+      return
+    }
+    const confirmed = window.confirm('Hapus semua jadwal shift yang sudah ditandai? Pengaturan desain tetap tersimpan dan tindakan ini tidak dapat dibatalkan.')
+    if (!confirmed) return
+    setSchedule({})
+    setBulkText('')
+    setNotice('Semua jadwal berhasil direset. Anda dapat memasukkan jadwal baru.')
+  }
   const downloadImage = async () => {
     if(!previewRef.current) return
     try {
@@ -201,6 +213,7 @@ function App() {
             <div className="shift-buttons">{(['pagi','sore','malam','libur'] as Shift[]).map(s=><button key={s} className={`shift-choice ${schedule[selected]===s?'active':''}`} onClick={()=>setShift(selected,s)}><span style={{background:settings[s]}}/>{shiftLabels[s]}</button>)}<button className="clear-choice" onClick={()=>setShift(selected,undefined)} title="Kosongkan tanggal"><RotateCcw size={15}/></button></div>
             <div className="stats-row"><div><Sun size={15}/><span>Pagi</span><b>{shiftCounts.pagi}</b></div><div><Moon size={15}/><span>Sore</span><b>{shiftCounts.sore}</b></div><div><Moon size={15}/><span>Malam</span><b>{shiftCounts.malam}</b></div><div><Coffee size={15}/><span>Libur</span><b>{shiftCounts.libur}</b></div></div>
             <button className="subtle-button full" onClick={copyPreviousMonth}>Salin jadwal bulan sebelumnya</button>
+            <button className="subtle-button full reset-schedule-button" onClick={resetSchedule}><RotateCcw size={15}/> Reset seluruh jadwal</button>
             <div className="entry-switch"><button className={entryMode==='calendar'?'active':''} onClick={()=>setEntryMode('calendar')}><CalendarDays size={15}/> Kalender</button><button className={entryMode==='text'?'active':''} onClick={()=>setEntryMode('text')}><ClipboardPaste size={15}/> Input teks</button></div>
             {entryMode==='text'&&<div className="bulk-entry"><label htmlFor="bulk">Isi beberapa tanggal sekaligus</label><textarea id="bulk" value={bulkText} onChange={e=>setBulkText(e.target.value)} placeholder="Contoh: 1P, 2P, 3L, 4S, 5S&#10;P = Pagi · S = Sore · M = Malam · L = Libur"/><button className="primary-button full" onClick={parseBulk}>Terapkan jadwal</button></div>}
           </section>
