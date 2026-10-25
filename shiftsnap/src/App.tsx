@@ -12,7 +12,7 @@ type Settings = {
 }
 const defaults: Settings = {
   title: 'Jadwal Kerja', owner: '', background: '#101827', surface: '#1b2638', text: '#f4f7fb',
-  muted: '#9aa8bc', pagi: '#f5bd4f', sore: '#8b8cf6', malam: '#5ba8ff', libur: '#55c7a5', accent: '#f5bd4f',
+  muted: '#9aa8bc', pagi: '#03a4fb', sore: '#fad72b', malam: '#76818e', libur: '#55c7a5', accent: '#f5bd4f',
   radius: 14, gap: 7, fontSize: 13, showLegend: true, showOutside: false, border: true, theme: 'Midnight'
 }
 const presets: {name:string; values: Partial<Settings>}[] = [
@@ -215,15 +215,15 @@ function App() {
         <div className="splash-title">Shift<span>Snap</span></div>
         <p className="splash-tagline">Atur jadwal kerja dengan lebih mudah.</p>
         <div className="splash-loading"><span/></div>
-        <div className="splash-loading-label">Memuat aplikasi...</div>
+        <div className="splash-loading-label">Tunggu Sebentar yaa...</div>
       </div>
-      <div className="splash-credit">Created by Rehan</div>
+      <div className="splash-credit">Dibuat oleh Rehan</div>
     </div>
   }
 
   return <div className="app-shell">
     <header className="topbar">
-      <div className="brand"><div className="brand-mark"><CalendarDays size={21}/></div><div><strong>ShiftSnap</strong><span>Studio Jadwal Kerja</span></div></div>
+      <div className="brand"><div className="brand-mark"><CalendarDays size={21}/></div><div><strong>ShiftSnap</strong><span>Dibuat oleh Rehan</span></div></div>
       <div className="top-actions"><span className="saved-indicator"><span/> Tersimpan otomatis</span><button className="icon-button" title="Simpan sekarang" onClick={saveNow}><Save size={17}/></button></div>
     </header>
     <main className="page">
@@ -262,7 +262,7 @@ function App() {
           <div className="preview-top"><div><div className="eyebrow"><Image size={14}/> LIVE PREVIEW</div><h2>Begini hasilnya</h2><p>Setiap perubahan langsung kelihatan di sini.</p></div><div className="format-switch"><button className={format==='calendar'?'active':''} onClick={()=>setFormat('calendar')}>Kalender</button><button className={format==='wallpaper'?'active':''} onClick={()=>setFormat('wallpaper')}>Wallpaper HP</button></div></div>
           {selectedVisual && <div className="visual-edit-panel">
             <div className="visual-edit-heading"><strong>Mengedit: {({title:'Judul jadwal',owner:'Nama',brand:'Logo teks',kicker:'Label kecil',month:'Periode',mark:'Penanda bulan',footerLeft:'Teks footer',footerCounts:'Ringkasan shift',credit:'Kredit pembuat',weekdays:'Nama hari',dayNumber:'Angka tanggal',shift:'Label shift'} as Record<string,string>)[selectedVisual.split(':')[0]] || 'Elemen jadwal'}</strong><button type="button" onClick={()=>setSelectedVisual(null)} aria-label="Tutup editor">×</button></div>
-            <label className="visual-edit-field">Tulisan<input value={visualEdits[selectedVisual]?.text ?? (selectedVisual==='title'?settings.title:selectedVisual==='owner'?settings.owner:selectedVisual==='brand'?'SHIFTSNAP':selectedVisual==='kicker'?'WORK SCHEDULE':selectedVisual==='month'?(rangeMode?rangeLabel:`${monthNames[month]} ${year}`):selectedVisual==='mark'?(rangeMode?'RANGE':String(month+1).padStart(2,'0')):selectedVisual==='footerLeft'?(settings.owner?`Dibuat untuk ${settings.owner}`:'JADWAL KERJA · LEBIH TERATUR'):selectedVisual==='footerCounts'?`${shiftCounts.pagi}P · ${shiftCounts.sore}S · ${shiftCounts.malam}M · ${shiftCounts.libur}L`:selectedVisual==='credit'?'Created by Rehan':selectedVisual.startsWith('weekdays:')?weekdays[Number(selectedVisual.split(':')[1])]:selectedVisual.startsWith('dayNumber:')?selectedVisual.split(':')[2]:selectedVisual.startsWith('shift:')?selectedVisual.split(':')[2]:'')} onChange={e=>updateVisual(selectedVisual,{text:e.target.value})}/></label>
+            <label className="visual-edit-field">Tulisan<input value={visualEdits[selectedVisual]?.text ?? (selectedVisual==='title'?settings.title:selectedVisual==='owner'?settings.owner:selectedVisual==='brand'?'SHIFTSNAP':selectedVisual==='kicker'?'WORK SCHEDULE':selectedVisual==='month'?(rangeMode?rangeLabel:`${monthNames[month]} ${year}`):selectedVisual==='mark'?(rangeMode?'RANGE':String(month+1).padStart(2,'0')):selectedVisual==='footerLeft'?(settings.owner?`Dibuat untuk ${settings.owner}`:'JADWAL KERJA · LEBIH TERATUR'):selectedVisual==='footerCounts'?`${shiftCounts.pagi}P · ${shiftCounts.sore}S · ${shiftCounts.malam}M · ${shiftCounts.libur}L`:selectedVisual==='credit'?'Dibuat oleh Rehan':selectedVisual.startsWith('weekdays:')?weekdays[Number(selectedVisual.split(':')[1])]:selectedVisual.startsWith('dayNumber:')?selectedVisual.split(':')[2]:selectedVisual.startsWith('shift:')?selectedVisual.split(':')[2]:'')} onChange={e=>updateVisual(selectedVisual,{text:e.target.value})}/></label>
             <div className="visual-edit-controls"><label>Warna<input type="color" value={visualEdits[selectedVisual]?.color || '#f5bd4f'} onChange={e=>updateVisual(selectedVisual,{color:e.target.value})}/></label><label>Ukuran <b>{visualEdits[selectedVisual]?.fontSize || 14}px</b><input type="range" min="7" max="48" value={visualEdits[selectedVisual]?.fontSize || 14} onChange={e=>updateVisual(selectedVisual,{fontSize:Number(e.target.value)})}/></label></div>
             <div className="visual-edit-controls"><label>Posisi X <b>{visualEdits[selectedVisual]?.x || 0}px</b><input type="range" min="-40" max="40" value={visualEdits[selectedVisual]?.x || 0} onChange={e=>updateVisual(selectedVisual,{x:Number(e.target.value)})}/></label><label>Posisi Y <b>{visualEdits[selectedVisual]?.y || 0}px</b><input type="range" min="-40" max="40" value={visualEdits[selectedVisual]?.y || 0} onChange={e=>updateVisual(selectedVisual,{y:Number(e.target.value)})}/></label></div>
             <button className="subtle-button" type="button" onClick={()=>setVisualEdits(prev=>{const next={...prev};delete next[selectedVisual];return next})}>Reset elemen ini</button>
@@ -284,7 +284,7 @@ function App() {
                 </div>
               })}</div>
               {settings.showLegend&&<div className="art-legend">{(['pagi','sore','malam','libur'] as Shift[]).map(s=><span key={s}><i style={{background:settings[s]}}/>{shiftLabels[s]}</span>)}</div>}
-              <div className="art-footer"><span {...editableProps('footerLeft','teks footer')} style={visualStyle('footerLeft')}>{visualText('footerLeft',settings.owner?`Dibuat untuk ${settings.owner}`:'JADWAL KERJA · LEBIH TERATUR')}</span><span {...editableProps('footerCounts','ringkasan shift')} style={visualStyle('footerCounts')}>{visualText('footerCounts',`${shiftCounts.pagi}P · ${shiftCounts.sore}S · ${shiftCounts.malam}M · ${shiftCounts.libur}L`)}</span><span {...editableProps('credit','kredit pembuat')} style={visualStyle('credit')} className="export-credit visual-editable">{visualText('credit','Created by Rehan')}</span></div>
+              <div className="art-footer"><span {...editableProps('footerLeft','teks footer')} style={visualStyle('footerLeft')}>{visualText('footerLeft',settings.owner?`Dibuat untuk ${settings.owner}`:'JADWAL KERJA · LEBIH TERATUR')}</span><span {...editableProps('footerCounts','ringkasan shift')} style={visualStyle('footerCounts')}>{visualText('footerCounts',`${shiftCounts.pagi}P · ${shiftCounts.sore}S · ${shiftCounts.malam}M · ${shiftCounts.libur}L`)}</span><span {...editableProps('credit','kredit pembuat')} style={visualStyle('credit')} className="export-credit visual-editable">{visualText('credit','Created by ShiftSnap')}</span></div>
             </div>
           </div>
           <div className="download-panel"><div className="download-copy"><div className="download-icon"><Download size={19}/></div><div><strong>Jadwal siap diunduh</strong><span>PNG resolusi tinggi · {rangeMode?'Jadwal satu periode':format==='wallpaper'?'Wallpaper 9:16':'Kalender bulanan'}</span></div></div><button className="primary-button download-button" disabled={!rangeValid} onClick={downloadImage}><Download size={17}/> Download PNG</button></div>
@@ -293,8 +293,8 @@ function App() {
           <div className="tip-card"><div className="tip-icon"><Palette size={18}/></div><div><strong>Panduan</strong><p>Pilih tanggal pada kalender, tentukan jenis shift, lalu periksa hasilnya pada pratinjau. Jadwal tersimpan otomatis di browser perangkat ini.</p></div></div>
         </section>
       </div>
-      <footer className="footer"><span>ShiftSnap © {now.getFullYear()}</span><span className="footer-credit">Created by Rehan <button type="button" className="about-link" onClick={()=>setShowAbout(true)}><Info size={13}/> Tentang aplikasi</button></span></footer>
-      {showAbout&&<div className="about-overlay" role="presentation" onClick={()=>setShowAbout(false)}><section className="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-title" onClick={e=>e.stopPropagation()}><button type="button" className="about-close" onClick={()=>setShowAbout(false)} aria-label="Tutup"><X size={18}/></button><div className="about-logo"><CalendarDays size={25}/></div><div className="about-eyebrow">TENTANG APLIKASI</div><h2 id="about-title">ShiftSnap</h2><p className="about-credit">Created by Rehan</p><p>ShiftSnap membantu Anda menyusun jadwal kerja, menyesuaikan tampilan, dan mengunduh jadwal sebagai gambar agar mudah disimpan dan dibagikan.</p><div className="about-version">Studio Jadwal Kerja · Versi 1.0</div><button type="button" className="primary-button full" onClick={()=>setShowAbout(false)}>Tutup</button></section></div>}
+      <footer className="footer"><span>ShiftSnap © {now.getFullYear()}</span><span className="footer-credit">Dibuat oleh Rehan <button type="button" className="about-link" onClick={()=>setShowAbout(true)}><Info size={13}/> Tentang aplikasi</button></span></footer>
+      {showAbout&&<div className="about-overlay" role="presentation" onClick={()=>setShowAbout(false)}><section className="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-title" onClick={e=>e.stopPropagation()}><button type="button" className="about-close" onClick={()=>setShowAbout(false)} aria-label="Tutup"><X size={18}/></button><div className="about-logo"><CalendarDays size={25}/></div><div className="about-eyebrow">TENTANG APLIKASI</div><h2 id="about-title">ShiftSnap</h2><p className="about-credit">Dibuat oleh Rehan</p><p>ShiftSnap membantu Anda menyusun jadwal kerja, menyesuaikan tampilan, dan mengunduh jadwal sebagai gambar agar mudah disimpan dan dibagikan.</p><div className="about-version">Studio Jadwal Kerja · Versi 1.0</div><button type="button" className="primary-button full" onClick={()=>setShowAbout(false)}>Tutup</button></section></div>}
     </main>
   </div>
 }
