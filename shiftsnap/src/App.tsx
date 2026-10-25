@@ -4,6 +4,7 @@ import { CalendarDays, Download, Palette, RotateCcw, Save, Upload, WandSparkles,
 
 type Shift = 'pagi' | 'sore' | 'malam' | 'libur'
 type Schedule = Record<string, Shift>
+type VisualEdit = { text?: string; color?: string; fontSize?: number; x?: number; y?: number }
 type Settings = {
   title: string; owner: string; background: string; surface: string; text: string; muted: string;
   pagi: string; sore: string; malam: string; libur: string; accent: string; radius: number; gap: number;
@@ -37,6 +38,8 @@ function App() {
   const [entryMode,setEntryMode] = useState<'calendar'|'text'>('calendar')
   const [bulkText,setBulkText] = useState('')
   const [settings,setSettings] = useState<Settings>(defaults)
+  const [visualEdits,setVisualEdits] = useState<Record<string,VisualEdit>>({})
+  const [selectedVisual,setSelectedVisual] = useState<string | null>(null)
   const [format,setFormat] = useState<'wallpaper'|'calendar'>('calendar')
   const [rangeMode,setRangeMode] = useState(true)
   const [rangeStart,setRangeStart] = useState(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-20`)
@@ -54,14 +57,15 @@ function App() {
         const data = JSON.parse(saved)
         if (data.schedule) setSchedule(data.schedule)
         if (data.settings) setSettings({...defaults,...data.settings})
+        if (data.visualEdits) setVisualEdits(data.visualEdits)
         if (data.year) setYear(data.year)
         if (typeof data.month === 'number') setMonth(data.month)
       }
     } catch { /* ignore malformed local data */ }
   }, [])
   useEffect(() => {
-    localStorage.setItem('shiftsnap-v1',JSON.stringify({schedule,settings,year,month}))
-  },[schedule,settings,year,month])
+    localStorage.setItem('shiftsnap-v1',JSON.stringify({schedule,settings,visualEdits,year,month}))
+  },[schedule,settings,visualEdits,year,month])
 
   const daysInMonth = new Date(year,month+1,0).getDate()
   const firstOffset = (new Date(year,month,1).getDay()+6)%7
@@ -86,6 +90,10 @@ function App() {
   },[year,month,daysInMonth,firstOffset,settings.showOutside])
 
   const setSetting = <K extends keyof Settings>(key:K,value:Settings[K]) => setSettings(s=>({...s,[key]:value}))
+  const updateVisual = (key:string, patch:Partial<VisualEdit>) => setVisualEdits(prev=>({...prev,[key]:{...prev[key],...patch}}))
+  const visualStyle = (key:string): React.CSSProperties => { const e=visualEdits[key]||{}; return { ...(e.color?{color:e.color}:{}), ...(e.fontSize?{fontSize:`${e.fontSize}px`}:{}), transform:`translate(${e.x||0}px, ${e.y||0}px)` } }
+  const visualText = (key:string, fallback:string) => visualEdits[key]?.text ?? fallback
+  const editableProps = (key:string, label:string) => ({ onClick:(e:React.MouseEvent)=>{e.stopPropagation();setSelectedVisual(key)}, title:`Klik untuk mengedit ${label}`, className:`visual-editable ${selectedVisual===key?'visual-selected':''}` })
   const setShift = (dateKey:string,shift?:Shift) => setSchedule(prev => {
     const next={...prev}
     if(shift) next[dateKey]=shift; else delete next[dateKey]
@@ -119,10 +127,10 @@ function App() {
     else setNotice('Format belum dikenali. Contoh: 1P, 2P, 3L, 4S, 5M.')
   }
   const saveNow = () => {
-    localStorage.setItem('shiftsnap-v1',JSON.stringify({schedule,settings,year,month}))
+    localStorage.setItem('shiftsnap-v1',JSON.stringify({schedule,settings,visualEdits,year,month}))
     setNotice('Jadwal dan desain berhasil disimpan di browser ini.')
   }
-  const resetDesign = () => { setSettings(defaults); setNotice('Desain dikembalikan ke pengaturan awal.') }
+  const resetDesign = () => { setSettings(defaults); setVisualEdits({}); setSelectedVisual(null); setNotice('Desain dikembalikan ke pengaturan awal.') }
   const resetSchedule = () => {
     const hasSchedule = Object.keys(schedule).length > 0
     if (!hasSchedule) {
@@ -150,7 +158,7 @@ function App() {
     }
   }
   const exportJSON = () => {
-    const blob=new Blob([JSON.stringify({schedule,settings,year,month},null,2)],{type:'application/json'})
+    const blob=new Blob([JSON.stringify({schedule,settings,visualEdits,year,month},null,2)],{type:'application/json'})
     const url=URL.createObjectURL(blob); const a=document.createElement('a')
     a.href=url; a.download=`ShiftSnap_${monthNames[month]}_${year}.json`; a.click(); URL.revokeObjectURL(url)
   }
@@ -161,6 +169,7 @@ function App() {
       const d=JSON.parse(String(reader.result))
       if(d.schedule) setSchedule(d.schedule)
       if(d.settings) setSettings({...defaults,...d.settings})
+      if(d.visualEdits) setVisualEdits(d.visualEdits)
       if(Number.isInteger(d.year)) setYear(d.year)
       if(Number.isInteger(d.month)&&d.month>=0&&d.month<12) setMonth(d.month)
       setNotice('Data berhasil diimpor.')
@@ -225,7 +234,7 @@ function App() {
             <div className="panel-heading"><div className="step">01</div><div><h2>Jadwal Kerja</h2><p>Pilih tanggal dan tentukan jenis shift.</p></div></div>
             <div className="range-settings"><label className="range-toggle"><input type="checkbox" checked={rangeMode} onChange={e=>setRangeMode(e.target.checked)}/><span>Jadwal berdasarkan rentang tanggal</span></label>{rangeMode&&<div className="range-date-fields"><label>Mulai<input type="date" value={rangeStart} onChange={e=>setRangeStart(e.target.value)}/></label><label>Selesai<input type="date" value={rangeEnd} min={rangeStart} onChange={e=>setRangeEnd(e.target.value)}/></label></div>}{rangeMode&&<p>Preview dan hasil download menampilkan tanggal dalam periode ini saja.</p>}</div>
             <div className="month-controls"><button className="icon-button" onClick={()=>changeMonth(-1)} aria-label="Bulan sebelumnya"><ChevronLeft size={18}/></button><strong>{monthNames[month]} {year}</strong><button className="icon-button" onClick={()=>changeMonth(1)} aria-label="Bulan berikutnya"><ChevronRight size={18}/></button></div>
-            <div className="weekday-row">{weekdays.map(d=><span key={d}>{d}</span>)}</div>
+            <div className="weekday-row">{weekdays.map((d,wi)=><span key={d} {...editableProps(`weekdays:${wi}`,'nama hari')} style={visualStyle(`weekdays:${wi}`)}>{visualText(`weekdays:${wi}`,d)}</span>)}</div>
             <div className="input-calendar">{cells.map((c,i)=>c.day===0?<div key={`blank-${i}`} className="calendar-blank"/>:<button key={c.dateKey} className={`date-cell ${!c.current?'outside':''} ${selected===c.dateKey?'selected':''}`} onClick={()=>{setSelected(c.dateKey);if(!c.current){const dt=new Date(c.dateKey+'T12:00:00');setYear(dt.getFullYear());setMonth(dt.getMonth())}}}><span>{c.day}</span>{schedule[c.dateKey]&&<i style={{background:shiftColors(schedule[c.dateKey],settings)}}/>}</button>)}</div>
             <div className="selected-date">Tanggal dipilih <strong>{selected ? new Date(selected+'T12:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '—'}</strong></div>
             <div className="shift-buttons">{(['pagi','sore','malam','libur'] as Shift[]).map(s=><button key={s} className={`shift-choice ${schedule[selected]===s?'active':''}`} onClick={()=>setShift(selected,s)}><span style={{background:settings[s]}}/>{shiftLabels[s]}</button>)}<button className="clear-choice" onClick={()=>setShift(selected,undefined)} title="Kosongkan tanggal"><RotateCcw size={15}/></button></div>
@@ -251,23 +260,31 @@ function App() {
 
         <section className="preview-column">
           <div className="preview-top"><div><div className="eyebrow"><Image size={14}/> LIVE PREVIEW</div><h2>Begini hasilnya</h2><p>Setiap perubahan langsung kelihatan di sini.</p></div><div className="format-switch"><button className={format==='calendar'?'active':''} onClick={()=>setFormat('calendar')}>Kalender</button><button className={format==='wallpaper'?'active':''} onClick={()=>setFormat('wallpaper')}>Wallpaper HP</button></div></div>
+          {selectedVisual && <div className="visual-edit-panel">
+            <div className="visual-edit-heading"><strong>Mengedit: {({title:'Judul jadwal',owner:'Nama',brand:'Logo teks',kicker:'Label kecil',month:'Periode',mark:'Penanda bulan',footerLeft:'Teks footer',footerCounts:'Ringkasan shift',credit:'Kredit pembuat',weekdays:'Nama hari',dayNumber:'Angka tanggal',shift:'Label shift'} as Record<string,string>)[selectedVisual.split(':')[0]] || 'Elemen jadwal'}</strong><button type="button" onClick={()=>setSelectedVisual(null)} aria-label="Tutup editor">×</button></div>
+            <label className="visual-edit-field">Tulisan<input value={visualEdits[selectedVisual]?.text ?? (selectedVisual==='title'?settings.title:selectedVisual==='owner'?settings.owner:selectedVisual==='brand'?'SHIFTSNAP':selectedVisual==='kicker'?'WORK SCHEDULE':selectedVisual==='month'?(rangeMode?rangeLabel:`${monthNames[month]} ${year}`):selectedVisual==='mark'?(rangeMode?'RANGE':String(month+1).padStart(2,'0')):selectedVisual==='footerLeft'?(settings.owner?`Dibuat untuk ${settings.owner}`:'JADWAL KERJA · LEBIH TERATUR'):selectedVisual==='footerCounts'?`${shiftCounts.pagi}P · ${shiftCounts.sore}S · ${shiftCounts.malam}M · ${shiftCounts.libur}L`:selectedVisual==='credit'?'Created by Rehan':selectedVisual.startsWith('weekdays:')?weekdays[Number(selectedVisual.split(':')[1])]:selectedVisual.startsWith('dayNumber:')?selectedVisual.split(':')[2]:selectedVisual.startsWith('shift:')?selectedVisual.split(':')[2]:'')} onChange={e=>updateVisual(selectedVisual,{text:e.target.value})}/></label>
+            <div className="visual-edit-controls"><label>Warna<input type="color" value={visualEdits[selectedVisual]?.color || '#f5bd4f'} onChange={e=>updateVisual(selectedVisual,{color:e.target.value})}/></label><label>Ukuran <b>{visualEdits[selectedVisual]?.fontSize || 14}px</b><input type="range" min="7" max="48" value={visualEdits[selectedVisual]?.fontSize || 14} onChange={e=>updateVisual(selectedVisual,{fontSize:Number(e.target.value)})}/></label></div>
+            <div className="visual-edit-controls"><label>Posisi X <b>{visualEdits[selectedVisual]?.x || 0}px</b><input type="range" min="-40" max="40" value={visualEdits[selectedVisual]?.x || 0} onChange={e=>updateVisual(selectedVisual,{x:Number(e.target.value)})}/></label><label>Posisi Y <b>{visualEdits[selectedVisual]?.y || 0}px</b><input type="range" min="-40" max="40" value={visualEdits[selectedVisual]?.y || 0} onChange={e=>updateVisual(selectedVisual,{y:Number(e.target.value)})}/></label></div>
+            <button className="subtle-button" type="button" onClick={()=>setVisualEdits(prev=>{const next={...prev};delete next[selectedVisual];return next})}>Reset elemen ini</button>
+          </div>}
+          <p className="visual-edit-hint"><Info size={14}/> Klik judul, teks, angka tanggal, atau label shift pada preview untuk mengeditnya.</p>
           <div className={`preview-stage ${format==='wallpaper'?'wallpaper-stage':''}`}>
             <div ref={previewRef} className={`export-art ${isWallpaper?'wallpaper-art':'calendar-art'}`} style={previewStyle}>
-              <div className="art-topline"><span className="art-brand">SHIFTSNAP <i/></span><span className="art-year">{year}</span></div>
-              <div className="art-heading"><div><div className="art-kicker">WORK SCHEDULE</div><h3>{settings.title || 'Jadwal Kerja'}</h3><div className="art-month">{rangeMode ? rangeLabel : `${monthNames[month]} ${year}`}</div>{settings.owner&&<div className="art-owner">{settings.owner}</div>}</div><div className="art-month-mark">{rangeMode ? 'RANGE' : String(month+1).padStart(2,'0')}</div></div>
-              <div className="art-weekdays">{weekdays.map(d=><span key={d}>{d}</span>)}</div>
+              <div className="art-topline"><span {...editableProps('brand','logo teks')} style={visualStyle('brand')} className={`art-brand visual-editable ${selectedVisual==='brand'?'visual-selected':''}`}>{visualText('brand','SHIFTSNAP')} <i/></span><span className="art-year">{year}</span></div>
+              <div className="art-heading"><div><div {...editableProps('kicker','label kecil')} style={visualStyle('kicker')} className={`art-kicker visual-editable ${selectedVisual==='kicker'?'visual-selected':''}`}>{visualText('kicker','WORK SCHEDULE')}</div><h3 {...editableProps('title','judul')} style={visualStyle('title')} className={`visual-editable ${selectedVisual==='title'?'visual-selected':''}`}>{visualText('title',settings.title || 'Jadwal Kerja')}</h3><div {...editableProps('month','periode')} style={visualStyle('month')} className={`art-month visual-editable ${selectedVisual==='month'?'visual-selected':''}`}>{visualText('month',rangeMode ? rangeLabel : `${monthNames[month]} ${year}`)}</div>{settings.owner&&<div {...editableProps('owner','nama')} style={visualStyle('owner')} className={`art-owner visual-editable ${selectedVisual==='owner'?'visual-selected':''}`}>{visualText('owner',settings.owner)}</div>}</div><div {...editableProps('mark','penanda bulan')} style={visualStyle('mark')} className={`art-month-mark visual-editable ${selectedVisual==='mark'?'visual-selected':''}`}>{visualText('mark',rangeMode ? 'RANGE' : String(month+1).padStart(2,'0'))}</div></div>
+              <div className="art-weekdays">{weekdays.map((d,wi)=><span key={d} {...editableProps(`weekdays:${wi}`,'nama hari')} style={visualStyle(`weekdays:${wi}`)}>{visualText(`weekdays:${wi}`,d)}</span>)}</div>
               <div className={`art-grid ${isWallpaper?'art-grid-wallpaper':''} ${rangeMode?'range-art-grid':''}`}>{previewDays.map((c,i)=>{
                 const shift=schedule[c.dateKey]
                 const itemDate = c.dateKey ? new Date(c.dateKey+'T12:00:00') : null
                 const today=!!itemDate&&itemDate.getDate()===now.getDate()&&itemDate.getMonth()===now.getMonth()&&itemDate.getFullYear()===now.getFullYear()
                 return <div key={`${c.dateKey}-${i}`} className={`art-day ${!c.current?'art-outside':''} ${today?'art-today':''}`} style={{borderRadius:settings.radius,background:shift?shiftColors(shift,settings)+'20':settings.surface,border:settings.border?`1px solid ${shift?shiftColors(shift,settings)+'88':'#ffffff18'}`:'1px solid transparent'}}>
-                  <span className="art-day-number" style={{color:c.current?settings.text:settings.muted}}>{c.day||''}</span>
-                  {shift&&<span className="art-shift" style={{background:shiftColors(shift,settings),color:'#17202c',borderRadius:Math.min(settings.radius,8)}}>{shiftLabels[shift]}</span>}
+                  <span {...editableProps(`dayNumber:${c.dateKey}:${c.day||''}`,'angka tanggal')} style={{color:c.current?settings.text:settings.muted,...visualStyle(`dayNumber:${c.dateKey}:${c.day||''}`)}} className={`art-day-number visual-editable ${selectedVisual===`dayNumber:${c.dateKey}:${c.day||''}`?'visual-selected':''}`}>{visualText(`dayNumber:${c.dateKey}:${c.day||''}`,String(c.day||''))}</span>
+                  {shift&&<span {...editableProps(`shift:${c.dateKey}:${shiftLabels[shift]}`,'label shift')} style={{background:shiftColors(shift,settings),color:'#17202c',borderRadius:Math.min(settings.radius,8),...visualStyle(`shift:${c.dateKey}:${shiftLabels[shift]}`)}} className={`art-shift visual-editable ${selectedVisual===`shift:${c.dateKey}:${shiftLabels[shift]}`?'visual-selected':''}`}>{visualText(`shift:${c.dateKey}:${shiftLabels[shift]}`,shiftLabels[shift])}</span>}
                   {today&&<span className="today-dot" style={{background:settings.accent}}/>}
                 </div>
               })}</div>
               {settings.showLegend&&<div className="art-legend">{(['pagi','sore','malam','libur'] as Shift[]).map(s=><span key={s}><i style={{background:settings[s]}}/>{shiftLabels[s]}</span>)}</div>}
-              <div className="art-footer"><span>{settings.owner?`Dibuat untuk ${settings.owner}`:'JADWAL KERJA · LEBIH TERATUR'}</span><span>{shiftCounts.pagi}P · {shiftCounts.sore}S · {shiftCounts.malam}M · {shiftCounts.libur}L</span><span className="export-credit">Created by Rehan</span></div>
+              <div className="art-footer"><span {...editableProps('footerLeft','teks footer')} style={visualStyle('footerLeft')}>{visualText('footerLeft',settings.owner?`Dibuat untuk ${settings.owner}`:'JADWAL KERJA · LEBIH TERATUR')}</span><span {...editableProps('footerCounts','ringkasan shift')} style={visualStyle('footerCounts')}>{visualText('footerCounts',`${shiftCounts.pagi}P · ${shiftCounts.sore}S · ${shiftCounts.malam}M · ${shiftCounts.libur}L`)}</span><span {...editableProps('credit','kredit pembuat')} style={visualStyle('credit')} className="export-credit visual-editable">{visualText('credit','Created by Rehan')}</span></div>
             </div>
           </div>
           <div className="download-panel"><div className="download-copy"><div className="download-icon"><Download size={19}/></div><div><strong>Jadwal siap diunduh</strong><span>PNG resolusi tinggi · {rangeMode?'Jadwal satu periode':format==='wallpaper'?'Wallpaper 9:16':'Kalender bulanan'}</span></div></div><button className="primary-button download-button" disabled={!rangeValid} onClick={downloadImage}><Download size={17}/> Download PNG</button></div>
