@@ -49,7 +49,7 @@ function App() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('shiftsnap-v1')
+      const saved = localStorage.getItem('HannShift-v1')
       if (saved) {
         const data = JSON.parse(saved)
         if (data.schedule) setSchedule(data.schedule)
@@ -60,7 +60,7 @@ function App() {
     } catch { /* ignore malformed local data */ }
   }, [])
   useEffect(() => {
-    localStorage.setItem('shiftsnap-v1',JSON.stringify({schedule,settings,year,month}))
+    localStorage.setItem('HannShift-v1',JSON.stringify({schedule,settings,year,month}))
   },[schedule,settings,year,month])
 
   const daysInMonth = new Date(year,month+1,0).getDate()
@@ -102,24 +102,81 @@ function App() {
     setSelected(keyOf(d.getFullYear(),d.getMonth(),1))
   }
   const parseBulk = () => {
-    const text=bulkText.trim()
-    if(!text) { setNotice('Silakan masukkan jadwal terlebih dahulu.'); return }
-    const next={...schedule}
-    let count=0
-    const tokens=text.split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean)
-    for(const token of tokens) {
-      const match=token.match(/^(\d{1,2})\s*[:=\-]?\s*(pagi|p|sore|s|malam|malem|m|libur|l|off|o)$/i)
-      if(!match) continue
-      const day=Number(match[1]); const code=match[2].toLowerCase()
-      if(day<1 || day>daysInMonth) continue
-      const shift:Shift = ['pagi','p'].includes(code)?'pagi':['sore','s'].includes(code)?'sore':['malam','malem','m'].includes(code)?'malam':'libur'
-      next[keyOf(year,month,day)]=shift; count++
+    const text = bulkText.trim()
+    if (!text) {
+      setNotice('Silakan masukkan jadwal terlebih dahulu.')
+      return
     }
-    if(count) {setSchedule(next);setNotice(`${count} jadwal berhasil dimasukkan.`)}
-    else setNotice('Format belum dikenali. Contoh: 1 Pagi, 2 Pagi, 3 Libur, 4 Ssore, 5 Malem.')
+
+    const next = { ...schedule }
+    const appliedKeys = new Set<string>()
+    const lines = text.split(/[\n;]+/).map(line => line.trim()).filter(Boolean)
+    const shiftAliases: Record<string, Shift> = {
+      pagi: 'pagi', p: 'pagi',
+      sore: 'sore', s: 'sore',
+      malam: 'malam', malem: 'malam', m: 'malam',
+      libur: 'libur', l: 'libur', off: 'libur', o: 'libur'
+    }
+
+    for (const line of lines) {
+      // Supports grouped input such as "1-5 pagi" or "1,2,3,4,5 pagi".
+      const groupedMatch = line.match(/^([\d,\s-]+?)\s*(pagi|p|sore|s|malam|malem|m|libur|l|off|o)$/i)
+
+      if (groupedMatch) {
+        const datePart = groupedMatch[1].trim()
+        const shift = shiftAliases[groupedMatch[2].toLowerCase()]
+        const days = new Set<number>()
+        const dateParts = datePart.split(',').map(part => part.trim()).filter(Boolean)
+
+        for (const part of dateParts) {
+          const rangeMatch = part.match(/^(\d{1,2})\s*-\s*(\d{1,2})$/)
+          if (rangeMatch) {
+            const startDay = Number(rangeMatch[1])
+            const endDay = Number(rangeMatch[2])
+            if (startDay <= endDay) {
+              for (let day = startDay; day <= endDay; day++) days.add(day)
+            }
+          } else if (/^\d{1,2}$/.test(part)) {
+            days.add(Number(part))
+          }
+        }
+
+        for (const day of days) {
+          if (day >= 1 && day <= daysInMonth) {
+            const dateKey = keyOf(year, month, day)
+            next[dateKey] = shift
+            appliedKeys.add(dateKey)
+          }
+        }
+        continue
+      }
+
+      // Retains the older format: "1p, 2s, 3m, 4l".
+      const tokens = line.split(',').map(token => token.trim()).filter(Boolean)
+      for (const token of tokens) {
+        const match = token.match(/^(\d{1,2})\s*[:=]?\s*(pagi|p|sore|s|malam|malem|m|libur|l|off|o)$/i)
+        if (!match) continue
+
+        const day = Number(match[1])
+        if (day < 1 || day > daysInMonth) continue
+
+        const shift = shiftAliases[match[2].toLowerCase()]
+        const dateKey = keyOf(year, month, day)
+        next[dateKey] = shift
+        appliedKeys.add(dateKey)
+      }
+    }
+
+    const count = appliedKeys.size
+    if (count) {
+      setSchedule(next)
+      setNotice(`${count} tanggal berhasil dimasukkan atau diperbarui.`)
+    } else {
+      setNotice('Format belum dikenali. Contoh: 1-5 pagi, 6,7,8 sore, atau 9-12 malam. Format lama seperti 1p, 2s juga tetap bisa.')
+    }
   }
   const saveNow = () => {
-    localStorage.setItem('shiftsnap-v1',JSON.stringify({schedule,settings,year,month}))
+    localStorage.setItem('HannShift-v1',JSON.stringify({schedule,settings,year,month}))
     setNotice('Jadwal dan desain berhasil disimpan di browser ini.')
   }
   const resetDesign = () => { setSettings(defaults); setNotice('Desain dikembalikan ke pengaturan awal.') }
@@ -142,7 +199,7 @@ function App() {
       const node=previewRef.current
       const dataUrl=await toPng(node,{pixelRatio:2,cacheBust:true,backgroundColor:settings.background})
       const a=document.createElement('a')
-      a.download=`ShiftSnap_${rangeMode?'Periode_'+rangeStart+'_sampai_'+rangeEnd:monthNames[month]+'_'+year}_${format==='wallpaper'?'Wallpaper':'Kalender'}.png`
+      a.download=`HannShift_${rangeMode?'Periode_'+rangeStart+'_sampai_'+rangeEnd:monthNames[month]+'_'+year}_${format==='wallpaper'?'Wallpaper':'Kalender'}.png`
       a.href=dataUrl; a.click()
       setNotice('Gambar PNG berhasil dibuat.')
     } catch (e) {
@@ -152,7 +209,7 @@ function App() {
   const exportJSON = () => {
     const blob=new Blob([JSON.stringify({schedule,settings,year,month},null,2)],{type:'application/json'})
     const url=URL.createObjectURL(blob); const a=document.createElement('a')
-    a.href=url; a.download=`ShiftSnap_${monthNames[month]}_${year}.json`; a.click(); URL.revokeObjectURL(url)
+    a.href=url; a.download=`HannShift_${monthNames[month]}_${year}.json`; a.click(); URL.revokeObjectURL(url)
   }
   const importJSON = (file?:File) => {
     if(!file) return
@@ -198,12 +255,12 @@ function App() {
   } as React.CSSProperties
 
   if (showSplash) {
-    return <div className="splash-screen" role="status" aria-label="Memuat ShiftSnap">
+    return <div className="splash-screen" role="status" aria-label="Memuat HannShift">
       <div className="splash-orbit splash-orbit-top"/>
       <div className="splash-orbit splash-orbit-bottom"/>
       <div className="splash-content">
         <div className="splash-logo"><CalendarDays size={58} strokeWidth={2.2}/><span className="splash-check"><Check size={25} strokeWidth={3}/></span><i className="splash-spark spark-one"/><i className="splash-spark spark-two"/><i className="splash-spark spark-three"/></div>
-        <div className="splash-title">Shift<span>Snap</span></div>
+        <div className="splash-title">Hann<span>Shift</span></div>
         <p className="splash-tagline">Atur jadwal kerja dengan lebih mudah.</p>
         <div className="splash-loading"><span/></div>
         <div className="splash-loading-label">Tunggu sebentar yaa...</div>
@@ -214,7 +271,7 @@ function App() {
 
   return <div className="app-shell">
     <header className="topbar">
-      <div className="brand"><div className="brand-mark"><CalendarDays size={21}/></div><div><strong>ShiftSnap</strong><span>By Rehan</span></div></div>
+      <div className="brand"><div className="brand-mark"><CalendarDays size={21}/></div><div><strong>HannShift</strong><span>By Rehan</span></div></div>
       <div className="top-actions"><span className="saved-indicator"><span/> Tersimpan otomatis</span><button className="icon-button" title="Simpan sekarang" onClick={saveNow}><Save size={17}/></button></div>
     </header>
     <main className="page">
@@ -233,7 +290,7 @@ function App() {
             <button className="subtle-button full" onClick={copyPreviousMonth}>Salin jadwal bulan sebelumnya</button>
             <button className="subtle-button full reset-schedule-button" onClick={resetSchedule}><RotateCcw size={15}/> Reset seluruh jadwal</button>
             <div className="entry-switch"><button className={entryMode==='calendar'?'active':''} onClick={()=>setEntryMode('calendar')}><CalendarDays size={15}/> Kalender</button><button className={entryMode==='text'?'active':''} onClick={()=>setEntryMode('text')}><ClipboardPaste size={15}/> Input teks</button></div>
-            {entryMode==='text'&&<div className="bulk-entry"><label htmlFor="bulk">Isi beberapa tanggal sekaligus</label><textarea id="bulk" value={bulkText} onChange={e=>setBulkText(e.target.value)} placeholder="Contoh: 1p, 2S, 3M, 4L,5L,7S&#10;P = Pagi · S = Sore · M = Malam · L = Libur"/><button className="primary-button full" onClick={parseBulk}>Terapkan jadwal</button></div>}
+            {entryMode==='text'&&<div className="bulk-entry"><label htmlFor="bulk">Isi beberapa tanggal sekaligus</label><textarea id="bulk" value={bulkText} onChange={e=>setBulkText(e.target.value)} placeholder="Contoh: 1-5 pagi&#10;6,7,8 sore&#10;9-12 malam&#10;13-15 libur&#10;&#10;Format lama juga bisa: 1p, 2s, 3m, 4l"/><button className="primary-button full" onClick={parseBulk}>Terapkan jadwal</button></div>}
           </section>
           <section className="panel">
             <div className="panel-heading"><div className="step">02</div><div><h2>Personalisasi</h2><p>Sesuaikan tampilan dengan preferensi Anda.</p></div></div>
@@ -250,10 +307,10 @@ function App() {
         </aside>
 
         <section className="preview-column">
-          <div className="preview-top"><div><div className="eyebrow"><Image size={14}/> LIVE PREVIEW</div><h2>Begini hasilnya</h2><p>Setiap perubahan langsung kelihatan di sini.</p></div><div className="format-switch"><button className={format==='calendar'?'active':''} onClick={()=>setFormat('calendar')}>Kalender</button><button className={format==='wallpaper'?'active':''} onClick={()=>setFormat('wallpaper')}>Wallpaper HP</button></div></div>
+          <div className="preview-top"><div><div className="eyebrow"><Image size={14}/> LIVE PREVIEW</div><h2>Contoh hasilnya</h2><p>Setiap perubahan langsung kelihatan di sini.</p></div><div className="format-switch"><button className={format==='calendar'?'active':''} onClick={()=>setFormat('calendar')}>Kalender</button><button className={format==='wallpaper'?'active':''} onClick={()=>setFormat('wallpaper')}>Wallpaper HP</button></div></div>
           <div className={`preview-stage ${format==='wallpaper'?'wallpaper-stage':''}`}>
             <div ref={previewRef} className={`export-art ${isWallpaper?'wallpaper-art':'calendar-art'}`} style={previewStyle}>
-              <div className="art-topline"><span className="art-brand">SHIFTSNAP <i/></span><span className="art-year">{year}</span></div>
+              <div className="art-topline"><span className="art-brand">HannShift <i/></span><span className="art-year">{year}</span></div>
               <div className="art-heading"><div><div className="art-kicker">WORK SCHEDULE</div><h3>{settings.title || 'Jadwal Kerja'}</h3><div className="art-month">{rangeMode ? rangeLabel : `${monthNames[month]} ${year}`}</div>{settings.owner&&<div className="art-owner">{settings.owner}</div>}</div><div className="art-month-mark">{rangeMode ? 'RANGE' : String(month+1).padStart(2,'0')}</div></div>
               <div className="art-weekdays">{weekdays.map(d=><span key={d}>{d}</span>)}</div>
               <div className={`art-grid ${isWallpaper?'art-grid-wallpaper':''} ${rangeMode?'range-art-grid':''}`}>{previewDays.map((c,i)=>{
@@ -267,7 +324,7 @@ function App() {
                 </div>
               })}</div>
               {settings.showLegend&&<div className="art-legend">{(['pagi','sore','malam','libur'] as Shift[]).map(s=><span key={s}><i style={{background:settings[s]}}/>{shiftLabels[s]}</span>)}</div>}
-              <div className="art-footer"><span>{settings.owner?`Dibuat untuk ${settings.owner}`:'JADWAL KERJA · LEBIH TERATUR'}</span><span>{(shiftCounts).pagi} Pagi · {(shiftCounts).sore} Sore · {(shiftCounts).malam} Malam · {(shiftCounts).libur} Libur</span><span className="export-credit">Created by ShiftSnap</span></div>
+              <div className="art-footer"><span>{settings.owner?`Dibuat untuk ${settings.owner}`:'JADWAL KERJA · LEBIH TERATUR'}</span><span>{(shiftCounts).pagi} Pagi · {(shiftCounts).sore} Sore · {(shiftCounts).malam} Malam · {(shiftCounts).libur} Libur</span><span className="export-credit">Created by HannShift</span></div>
             </div>
           </div>
           <div className="download-panel"><div className="download-copy"><div className="download-icon"><Download size={19}/></div><div><strong>Jadwal siap diunduh</strong><span>PNG resolusi tinggi · {rangeMode?'Jadwal satu periode':format==='wallpaper'?'Wallpaper 9:16':'Kalender bulanan'}</span></div></div><button className="primary-button download-button" disabled={!rangeValid} onClick={downloadImage}><Download size={17}/> Download PNG</button></div>
@@ -276,8 +333,8 @@ function App() {
           <div className="tip-card"><div className="tip-icon"><CircleAlert size={18}/></div><div><strong>Panduan</strong><p>Pilih tanggal pada kalender, tentukan jenis shift, lalu periksa hasilnya pada pratinjau. Jadwal tersimpan otomatis di browser perangkat ini.</p></div></div>
         </section>
       </div>
-      <footer className="footer"><span>ShiftSnap © {now.getFullYear()}</span><span className="footer-credit">Dibuat oleh Rehan <button type="button" className="about-link" onClick={()=>setShowAbout(true)}><Info size={13}/> Tentang aplikasi</button></span></footer>
-      {showAbout&&<div className="about-overlay" role="presentation" onClick={()=>setShowAbout(false)}><section className="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-title" onClick={e=>e.stopPropagation()}><button type="button" className="about-close" onClick={()=>setShowAbout(false)} aria-label="Tutup"><X size={18}/></button><div className="about-logo"><CalendarDays size={25}/></div><div className="about-eyebrow">TENTANG APLIKASI</div><h2 id="about-title">ShiftSnap</h2><p className="about-credit">By Rehan</p><p>ShiftSnap membantu Anda menyusun jadwal kerja, menyesuaikan tampilan, dan mengunduh jadwal sebagai gambar agar mudah disimpan dan dibagikan.</p><div className="about-version">Studio Jadwal Kerja · Versi 1.0</div><button type="button" className="primary-button full" onClick={()=>setShowAbout(false)}>Tutup</button></section></div>}
+      <footer className="footer"><span>HannShift © {now.getFullYear()}</span><span className="footer-credit">Dibuat oleh Rehan <button type="button" className="about-link" onClick={()=>setShowAbout(true)}><Info size={13}/> Tentang aplikasi</button></span></footer>
+      {showAbout&&<div className="about-overlay" role="presentation" onClick={()=>setShowAbout(false)}><section className="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-title" onClick={e=>e.stopPropagation()}><button type="button" className="about-close" onClick={()=>setShowAbout(false)} aria-label="Tutup"><X size={18}/></button><div className="about-logo"><CalendarDays size={25}/></div><div className="about-eyebrow">TENTANG APLIKASI</div><h2 id="about-title">HannShift</h2><p className="about-credit">By Rehan</p><p>HannShift membantu Anda menyusun jadwal kerja, menyesuaikan tampilan, dan mengunduh jadwal sebagai gambar agar mudah disimpan dan dibagikan.</p><div className="about-version">Studio Jadwal Kerja · Versi 1.0</div><button type="button" className="primary-button full" onClick={()=>setShowAbout(false)}>Tutup</button></section></div>}
     </main>
   </div>
 }
