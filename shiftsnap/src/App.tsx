@@ -274,7 +274,7 @@ function App() {
   },[rangeMode,rangeStart,rangeEnd])
   const rangeWeekdayOffset = rangeDates.length ? (rangeDates[0].date.getDay()+6)%7 : 0
   const previewDays = rangeMode ? [...Array.from({length:rangeWeekdayOffset},()=>({day:0,current:false,dateKey:''})), ...rangeDates] : format==='wallpaper' ? Array.from({length:daysInMonth},(_,i)=>({day:i+1,current:true,dateKey:keyOf(year,month,i+1)})) : cells
-  const isWallpaper = format==='wallpaper' && !rangeMode
+  const isWallpaper = format==='wallpaper'
   const rangeLabel = rangeStart && rangeEnd ? `${new Date(rangeStart+'T12:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long'})} – ${new Date(rangeEnd+'T12:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}` : 'Pilih periode jadwal'
   const rangeValid = !rangeMode || (rangeStart && rangeEnd && rangeStart <= rangeEnd)
   const previewStyle = {

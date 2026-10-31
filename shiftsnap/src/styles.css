@@ -172,9 +172,75 @@ body{background:radial-gradient(ellipse at 85% -10%,#1b4665 0,transparent 40%),#
 .export-fixed.calendar-art .art-footer{gap:18px;padding-top:22px;margin-top:28px;font-size:14px;letter-spacing:.3px}
 .export-fixed.calendar-art .art-footer .export-credit{font-size:17px;letter-spacing:.4px}
 
-/* Wallpaper export remains available, with a fixed canvas width as well. */
+/* Dedicated portrait layout for wallpaper exports (also works with custom date ranges). */
+.wallpaper-art{
+  width:min(100%,360px);
+  max-width:360px;
+  padding:25px 18px;
+  border-radius:24px;
+}
+.wallpaper-art .art-topline{margin-bottom:20px;font-size:9px}
+.wallpaper-art .art-heading{
+  display:block;
+  margin-bottom:20px;
+}
+.wallpaper-art .art-heading h3{
+  font-size:25px;
+  line-height:1.12;
+  overflow-wrap:anywhere;
+}
+.wallpaper-art .art-month{font-size:12px;line-height:1.4}
+.wallpaper-art .art-month-mark{display:none}
+.wallpaper-art .art-weekdays{gap:4px;margin-bottom:4px}
+.wallpaper-art .art-weekdays span{font-size:9px;padding:5px 0}
+.wallpaper-art .art-grid{gap:4px}
+.wallpaper-art .art-day{
+  aspect-ratio:1/1.08;
+  min-width:0;
+  padding:5px 4px;
+}
+.wallpaper-art .art-day-number{font-size:12px}
+.wallpaper-art .art-shift{
+  font-size:clamp(6px,1.8vw,8px);
+  padding:4px 1px;
+  letter-spacing:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.wallpaper-art .art-legend{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  justify-items:start;
+  gap:10px 18px;
+  padding:18px 8px 5px;
+}
+.wallpaper-art .art-legend span{font-size:9px;gap:7px}
+.wallpaper-art .art-footer{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:7px;
+  padding-top:12px;
+  margin-top:15px;
+  font-size:8px;
+  line-height:1.4;
+}
+.wallpaper-art .art-footer .export-credit{font-size:9px;white-space:normal}
+
+/* Keep the downloaded wallpaper at a fixed phone-friendly portrait width. */
 .export-fixed.wallpaper-art{
   width:360px!important;
   max-width:none!important;
+  padding:25px 18px!important;
   border-radius:24px!important;
+  box-shadow:none!important;
 }
+.export-fixed.wallpaper-art .art-heading{display:block!important;margin-bottom:20px!important}
+.export-fixed.wallpaper-art .art-heading h3{font-size:25px!important;line-height:1.12!important}
+.export-fixed.wallpaper-art .art-month-mark{display:none!important}
+.export-fixed.wallpaper-art .art-day{aspect-ratio:1/1.08!important;padding:5px 4px!important}
+.export-fixed.wallpaper-art .art-day-number{font-size:12px!important}
+.export-fixed.wallpaper-art .art-shift{font-size:8px!important;white-space:normal!important;overflow-wrap:anywhere}
+.export-fixed.wallpaper-art .art-legend{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;justify-items:start!important;gap:10px 18px!important;padding:18px 8px 5px!important}
+.export-fixed.wallpaper-art .art-footer{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:7px!important}
+
