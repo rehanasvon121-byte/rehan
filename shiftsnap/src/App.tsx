@@ -6,13 +6,11 @@ type Shift = 'pagi' | 'sore' | 'malam' | 'libur'
 type Schedule = Record<string, Shift>
 type Settings = {
   title: string; owner: string; background: string; surface: string; text: string; muted: string;
-  pagi: string; sore: string; malam: string; libur: string; accent: string; radius: number; gap: number;
-  fontSize: number; showLegend: boolean; showOutside: boolean; border: boolean; theme: string;
+  pagi: string; sore: string; malam: string; libur: string; accent: string; theme: string;
 }
 const defaults: Settings = {
   title: 'Jadwal Kerja', owner: '', background: '#0B1B2B', surface: '#142A40', text: '#F1F8FC',
-  muted: '#9BB4C8', pagi: '#F4C66A', sore: '#55BCEB', malam: '#8C9EF5', libur: '#62D4BE', accent: '#55C9EF',
-  radius: 14, gap: 7, fontSize: 13, showLegend: true, showOutside: false, border: true, theme: 'Ice Blue'
+  muted: '#9BB4C8', pagi: '#F4C66A', sore: '#55BCEB', malam: '#8C9EF5', libur: '#62D4BE', accent: '#55C9EF', theme: 'Ice Blue'
 }
 const presets: {name:string; values: Partial<Settings>}[] = [
   {name:'Ice Blue',values:{background:'#0B1B2B',surface:'#142A40',text:'#F1F8FC',muted:'#9BB4C8',pagi:'#F4C66A',sore:'#55BCEB',malam:'#8C9EF5',libur:'#62D4BE',accent:'#55C9EF'}},
@@ -80,7 +78,7 @@ function App() {
   const firstOffset = (new Date(year,month,1).getDay()+6)%7
   const cells = useMemo(() => {
     const arr: {day:number; current:boolean; dateKey:string}[] = []
-    if (settings.showOutside) {
+    if (false) {
       for (let i=firstOffset-1;i>=0;i--) {
         const d = new Date(year,month,0-i)
         arr.push({day:d.getDate(),current:false,dateKey:keyOf(d.getFullYear(),d.getMonth(),d.getDate())})
@@ -89,14 +87,14 @@ function App() {
       for(let i=0;i<firstOffset;i++) arr.push({day:0,current:false,dateKey:''})
     }
     for(let d=1;d<=daysInMonth;d++) arr.push({day:d,current:true,dateKey:keyOf(year,month,d)})
-    if(settings.showOutside) {
+    if(false) {
       let d=1
       while(arr.length%7!==0) { arr.push({day:d,current:false,dateKey:keyOf(year,month+1,d)}); d++ }
     } else {
       while(arr.length%7!==0) arr.push({day:0,current:false,dateKey:''})
     }
     return arr
-  },[year,month,daysInMonth,firstOffset,settings.showOutside])
+  },[year,month,daysInMonth,firstOffset])
 
   const setSetting = <K extends keyof Settings>(key:K,value:Settings[K]) => setSettings(s=>({...s,[key]:value}))
   const setShift = (dateKey:string,shift?:Shift) => setSchedule(prev => {
@@ -207,16 +205,34 @@ function App() {
   }
   const downloadImage = async () => {
     if(!previewRef.current) return
+    let exportHost: HTMLDivElement | null = null
     try {
       setNotice('Menyiapkan gambar…')
-      const node=previewRef.current
-      const dataUrl=await toPng(node,{pixelRatio:2,cacheBust:true,backgroundColor:settings.background})
+      // Render a detached copy at a fixed design width so mobile viewport
+      // dimensions never shrink the exported calendar.
+      exportHost = document.createElement('div')
+      exportHost.style.cssText = 'position:fixed;left:-12000px;top:0;width:900px;pointer-events:none;z-index:-1;'
+      const exportNode = previewRef.current.cloneNode(true) as HTMLDivElement
+      exportNode.classList.add('export-fixed')
+      exportNode.style.width = format === 'wallpaper' ? '360px' : '900px'
+      exportNode.style.maxWidth = 'none'
+      exportHost.appendChild(exportNode)
+      document.body.appendChild(exportHost)
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      const dataUrl=await toPng(exportNode,{
+        pixelRatio:2,
+        cacheBust:true,
+        backgroundColor:settings.background,
+        width:format === 'wallpaper' ? 360 : 900
+      })
       const a=document.createElement('a')
       a.download=`HanShift_${rangeMode?'Periode_'+rangeStart+'_sampai_'+rangeEnd:monthNames[month]+'_'+year}_${format==='wallpaper'?'Wallpaper':'Kalender'}.png`
       a.href=dataUrl; a.click()
       setNotice('Gambar PNG berhasil dibuat.')
     } catch (e) {
       console.error(e); setNotice('Ekspor gagal. Coba lagi atau gunakan browser Chrome terbaru.')
+    } finally {
+      exportHost?.remove()
     }
   }
   const exportJSON = () => {
@@ -264,7 +280,7 @@ function App() {
   const previewStyle = {
     '--bg':settings.background,'--surface':settings.surface,'--text':settings.text,'--muted':settings.muted,
     '--pagi':settings.pagi,'--sore':settings.sore,'--malam':settings.malam,'--libur':settings.libur,'--accent':settings.accent,
-    '--radius':`${settings.radius}px`,'--cell-gap':`${settings.gap}px`,'--font-size':`${settings.fontSize}px`
+    '--radius':'0px','--cell-gap':'5px','--font-size':'16px'
   } as React.CSSProperties
 
   if (showSplash) {
@@ -288,7 +304,7 @@ function App() {
       <div className="top-actions"><span className="saved-indicator"><span/> Tersimpan otomatis</span><button className="icon-button help-button" title="Cara menggunakan HanShift" aria-label="Cara menggunakan HanShift" onClick={()=>{setTutorialStep(0);setShowTutorial(true)}}><HelpCircle size={18}/><span className="help-label">Bantuan</span></button><button className="icon-button" title="Simpan sekarang" onClick={saveNow}><Save size={17}/></button></div>
     </header>
     <main className="page">
-      <section className="intro"><div><div className="eyebrow"><WandSparkles size={14}/> SHIFT PLANNER</div><h1><em>Jadwal kerja</em> yang lebih teratur.</h1><p>Atur jadwal kerja, sesuaikan desain, lalu unduh sebagai gambar untuk disimpan di perangkat Anda.</p></div><div className="month-chip"><CalendarDays size={17}/><span>{monthNames[month]} {year}</span></div></section>
+      <section className="intro"><div><div className="eyebrow"><WandSparkles size={14}/> SHIFT PLANNER</div><h1><em>Jadwal kerja</em> yang lebih teratur.</h1><p>Atur jadwal kerja, pilih warna, lalu unduh sebagai gambar yang rapi untuk disimpan dan dibagikan.</p></div><div className="month-chip"><CalendarDays size={17}/><span>{monthNames[month]} {year}</span></div></section>
       <div className="workspace">
         <aside className="editor-column">
           <section className="panel">
@@ -311,11 +327,8 @@ function App() {
             <div className="field"><label>Nama (opsional)</label><input value={settings.owner} onChange={e=>setSetting('owner',e.target.value)} placeholder="Masukkan nama"/></div>
             <div className="field"><label>Preset warna</label><div className="preset-grid">{presets.map(p=><button key={p.name} className={`preset ${settings.theme===p.name?'active':''}`} onClick={()=>applyPreset(p.name)}><span className="swatches">{[p.values.pagi,p.values.sore,p.values.libur].map(c=><i key={c} style={{background:c}}/>)}</span>{p.name}</button>)}</div></div>
             <div className="field"><label>Warna desain</label><div className="color-grid">{([{key:'background',label:'Latar'},{key:'surface',label:'Kartu'},{key:'text',label:'Teks'},{key:'accent',label:'Aksen'},{key:'pagi',label:'Pagi'},{key:'sore',label:'Sore'},{key:'malam',label:'Malam'},{key:'libur',label:'Libur'}] as {key:keyof Settings;label:string}[]).map(c=><label className="color-field" key={c.key}><input type="color" value={String(settings[c.key])} onChange={e=>setSetting(c.key,e.target.value)}/><span>{c.label}</span></label>)}</div></div>
-            <div className="field range-field"><label>Sudut tabel <b>{settings.radius}px</b></label><input type="range" min="0" max="28" value={settings.radius} onChange={e=>setSetting('radius',Number(e.target.value))}/></div>
-            <div className="field range-field"><label>Jarak tanggal <b>{settings.gap}px</b></label><input type="range" min="2" max="14" value={settings.gap} onChange={e=>setSetting('gap',Number(e.target.value))}/></div>
-            <div className="field range-field"><label>Ukuran tanggal <b>{settings.fontSize}px</b></label><input type="range" min="9" max="18" value={settings.fontSize} onChange={e=>setSetting('fontSize',Number(e.target.value))}/></div>
-            <div className="toggle-list"><label><span>Tampilkan legenda</span><input type="checkbox" checked={settings.showLegend} onChange={e=>setSetting('showLegend',e.target.checked)}/></label><label><span>Tampilkan tanggal luar bulan</span><input type="checkbox" checked={settings.showOutside} onChange={e=>setSetting('showOutside',e.target.checked)}/></label><label><span>Border halus pada tanggal</span><input type="checkbox" checked={settings.border} onChange={e=>setSetting('border',e.target.checked)}/></label></div>
-            <button className="subtle-button full" onClick={resetDesign}><RotateCcw size={15}/> Reset desain</button>
+            <div className="tip-card design-note"><div className="tip-icon"><Palette size={18}/></div><div><strong>Desain tabel otomatis</strong><p>Ukuran tanggal, jarak, bentuk kotak, dan label shift sudah diatur agar hasil unduhan selalu rapi. Anda tetap bisa mengganti warna sesuai selera.</p></div></div>
+            <button className="subtle-button full" onClick={resetDesign}><RotateCcw size={15}/> Reset warna</button>
           </section>
         </aside>
 
@@ -330,13 +343,13 @@ function App() {
                 const shift=schedule[c.dateKey]
                 const itemDate = c.dateKey ? new Date(c.dateKey+'T12:00:00') : null
                 const today=!!itemDate&&itemDate.getDate()===now.getDate()&&itemDate.getMonth()===now.getMonth()&&itemDate.getFullYear()===now.getFullYear()
-                return <div key={`${c.dateKey}-${i}`} className={`art-day ${!c.current?'art-outside':''} ${today?'art-today':''}`} style={{borderRadius:settings.radius,background:shift?shiftColors(shift,settings)+'20':settings.surface,border:settings.border?`1px solid ${shift?shiftColors(shift,settings)+'88':'#ffffff18'}`:'1px solid transparent'}}>
+                return <div key={`${c.dateKey}-${i}`} className={`art-day ${!c.current?'art-outside':''} ${today?'art-today':''}`} style={{background:shift?shiftColors(shift,settings)+'20':settings.surface,border:`1px solid ${shift?shiftColors(shift,settings)+'88':'#ffffff18'}`}}>
                   <span className="art-day-number" style={{color:c.current?settings.text:settings.muted}}>{c.day||''}</span>
-                  {shift&&<span className="art-shift" style={{background:shiftColors(shift,settings),color:'#17202c',borderRadius:Math.min(settings.radius,8)}}>{shiftLabels[shift]}</span>}
+                  {shift&&<span className="art-shift" style={{background:shiftColors(shift,settings),color:'#17202c',borderRadius:0}}>{shiftLabels[shift]}</span>}
                   {today&&<span className="today-dot" style={{background:settings.accent}}/>}
                 </div>
               })}</div>
-              {settings.showLegend&&<div className="art-legend">{(['pagi','sore','malam','libur'] as Shift[]).map(s=><span key={s}><i style={{background:settings[s]}}/>{shiftLabels[s]}</span>)}</div>}
+              <div className="art-legend">{(['pagi','sore','malam','libur'] as Shift[]).map(s=><span key={s}><i style={{background:settings[s]}}/>{shiftLabels[s]}</span>)}</div>
               <div className="art-footer"><span>{settings.owner?`Dibuat untuk ${settings.owner}`:'JADWAL KERJA · LEBIH TERATUR'}</span><span>{(shiftCounts).pagi} Pagi · {(shiftCounts).sore} Sore · {(shiftCounts).malam} Malam · {(shiftCounts).libur} Libur</span><span className="export-credit">Created by HanShift</span></div>
             </div>
           </div>
@@ -347,7 +360,7 @@ function App() {
         </section>
       </div>
       <footer className="footer"><span>HanShift © {now.getFullYear()}</span><span className="footer-credit">Dibuat oleh Rehan <button type="button" className="about-link" onClick={()=>setShowAbout(true)}><Info size={13}/> Tentang aplikasi</button></span></footer>
-      {showTutorial&&<div className="about-overlay tutorial-overlay" role="presentation" onClick={()=>{}}><section className="about-dialog tutorial-dialog" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" onClick={e=>e.stopPropagation()}><button type="button" className="about-close" onClick={()=>{setShowTutorial(false);try{localStorage.setItem('HannShift-tutorial-seen','yes')}catch{}}} aria-label="Tutup tutorial"><X size={18}/></button><div className="about-eyebrow">PANDUAN PEMULA · LANGKAH {tutorialStep+1} DARI 5</div><div className="tutorial-progress">{[0,1,2,3,4].map(i=><span key={i} className={i<=tutorialStep?'active':''}/>)}</div><div className="about-logo tutorial-icon">{[<CalendarDays size={25}/>,<CalendarDays size={25}/>,<Sun size={25}/>,<Palette size={25}/>,<Download size={25}/>][tutorialStep]}</div><h2 id="tutorial-title">{['Kenali halaman utama','Pilih tanggal jadwal','Tentukan jenis shift','Atur tampilan jadwal','Unduh hasil jadwal'][tutorialStep]}</h2><p>{['Ini halaman utama HanShift. Di sebelah kiri, Anda mengisi jadwal. Di sebelah kanan, hasilnya langsung terlihat di pratinjau.','Pilih tanggal pada kalender. Anda juga bisa mengatur tanggal mulai dan selesai untuk menentukan periode jadwal.','Setelah memilih tanggal, tekan salah satu pilihan: Pagi, Sore, Malam, atau Libur. Ulangi untuk tanggal lainnya.','Buka bagian Personalisasi untuk mengganti judul, nama, warna, ukuran teks, dan tampilan jadwal.','Jika hasilnya sudah sesuai, tekan tombol Download PNG. Gambar jadwal akan tersimpan di perangkat dan siap dibagikan.'][tutorialStep]}</p><div className="tutorial-tip"><strong>Tips</strong><span>{['Tidak perlu mengisi semuanya sekaligus. Anda bisa mengubah jadwal kapan saja.','Untuk mengisi banyak tanggal, gunakan tab Input teks dan ikuti contoh format yang tersedia.','Kode shift: P = Pagi, S = Sore, M = Malam, L = Libur.','Perubahan desain langsung terlihat di bagian Contoh hasilnya.','Jadwal juga tersimpan otomatis di browser perangkat ini.'][tutorialStep]}</span></div><div className="tutorial-actions"><button type="button" className="subtle-button" disabled={tutorialStep===0} onClick={()=>setTutorialStep(v=>Math.max(0,v-1))}>Kembali</button>{tutorialStep<4?<button type="button" className="primary-button" onClick={()=>setTutorialStep(v=>Math.min(4,v+1))}>Berikutnya <ChevronRight size={16}/></button>:<button type="button" className="primary-button" onClick={()=>{setShowTutorial(false);try{localStorage.setItem('HannShift-tutorial-seen','yes')}catch{}}}>Mulai gunakan HanShift <Check size={16}/></button>}</div><button type="button" className="tutorial-skip" onClick={()=>{setShowTutorial(false);try{localStorage.setItem('HannShift-tutorial-seen','yes')}catch{}}}>Lewati tutorial</button></section></div>}
+      {showTutorial&&<div className="about-overlay tutorial-overlay" role="presentation" onClick={()=>{}}><section className="about-dialog tutorial-dialog" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" onClick={e=>e.stopPropagation()}><button type="button" className="about-close" onClick={()=>{setShowTutorial(false);try{localStorage.setItem('HannShift-tutorial-seen','yes')}catch{}}} aria-label="Tutup tutorial"><X size={18}/></button><div className="about-eyebrow">PANDUAN PEMULA · LANGKAH {tutorialStep+1} DARI 5</div><div className="tutorial-progress">{[0,1,2,3,4].map(i=><span key={i} className={i<=tutorialStep?'active':''}/>)}</div><div className="about-logo tutorial-icon">{[<CalendarDays size={25}/>,<CalendarDays size={25}/>,<Sun size={25}/>,<Palette size={25}/>,<Download size={25}/>][tutorialStep]}</div><h2 id="tutorial-title">{['Kenali halaman utama','Pilih tanggal jadwal','Tentukan jenis shift','Atur tampilan jadwal','Unduh hasil jadwal'][tutorialStep]}</h2><p>{['Ini halaman utama HanShift. Di sebelah kiri, Anda mengisi jadwal. Di sebelah kanan, hasilnya langsung terlihat di pratinjau.','Pilih tanggal pada kalender. Anda juga bisa mengatur tanggal mulai dan selesai untuk menentukan periode jadwal.','Setelah memilih tanggal, tekan salah satu pilihan: Pagi, Sore, Malam, atau Libur. Ulangi untuk tanggal lainnya.','Buka bagian Personalisasi untuk mengganti judul, nama, dan warna jadwal.','Jika hasilnya sudah sesuai, tekan tombol Download PNG. Gambar jadwal akan tersimpan di perangkat dan siap dibagikan.'][tutorialStep]}</p><div className="tutorial-tip"><strong>Tips</strong><span>{['Tidak perlu mengisi semuanya sekaligus. Anda bisa mengubah jadwal kapan saja.','Untuk mengisi banyak tanggal, gunakan tab Input teks dan ikuti contoh format yang tersedia.','Kode shift: P = Pagi, S = Sore, M = Malam, L = Libur.','Pilihan warna langsung terlihat di bagian Contoh hasilnya.','Jadwal juga tersimpan otomatis di browser perangkat ini.'][tutorialStep]}</span></div><div className="tutorial-actions"><button type="button" className="subtle-button" disabled={tutorialStep===0} onClick={()=>setTutorialStep(v=>Math.max(0,v-1))}>Kembali</button>{tutorialStep<4?<button type="button" className="primary-button" onClick={()=>setTutorialStep(v=>Math.min(4,v+1))}>Berikutnya <ChevronRight size={16}/></button>:<button type="button" className="primary-button" onClick={()=>{setShowTutorial(false);try{localStorage.setItem('HannShift-tutorial-seen','yes')}catch{}}}>Mulai gunakan HanShift <Check size={16}/></button>}</div><button type="button" className="tutorial-skip" onClick={()=>{setShowTutorial(false);try{localStorage.setItem('HannShift-tutorial-seen','yes')}catch{}}}>Lewati tutorial</button></section></div>}
       {showAbout&&<div className="about-overlay" role="presentation" onClick={()=>setShowAbout(false)}><section className="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-title" onClick={e=>e.stopPropagation()}><button type="button" className="about-close" onClick={()=>setShowAbout(false)} aria-label="Tutup"><X size={18}/></button><div className="about-logo"><img src="/hanshift-icon.png" alt="Logo HanShift" /></div><div className="about-eyebrow">TENTANG APLIKASI</div><h2 id="about-title">HanShift</h2><p className="about-credit">By Rehan</p><p>HanShift membantu Anda menyusun jadwal kerja, menyesuaikan tampilan, dan mengunduh jadwal sebagai gambar agar mudah disimpan dan dibagikan.</p><div className="about-version">Studio Jadwal Kerja · Versi 1.0</div><button type="button" className="primary-button full" onClick={()=>setShowAbout(false)}>Tutup</button></section></div>}
     </main>
   </div>

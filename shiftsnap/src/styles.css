@@ -142,3 +142,39 @@ body{background:radial-gradient(ellipse at 85% -10%,#1b4665 0,transparent 40%),#
     background: #0b1b2b;
   }
 }
+
+/* HanShift fixed export layout: identical calendar geometry on phones and desktop. */
+.export-fixed.calendar-art{
+  width:900px!important;
+  max-width:none!important;
+  padding:40px!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.export-fixed.calendar-art .art-topline{font-size:15px;margin-bottom:34px;letter-spacing:2.5px}
+.export-fixed.calendar-art .art-brand i{width:10px;height:10px}
+.export-fixed.calendar-art .art-heading{gap:18px;margin-bottom:38px}
+.export-fixed.calendar-art .art-kicker{font-size:13px;letter-spacing:3px;margin-bottom:12px}
+.export-fixed.calendar-art .art-heading h3{font-size:54px;line-height:1.08;letter-spacing:-2px;margin-bottom:8px}
+.export-fixed.calendar-art .art-month{font-size:24px;line-height:1.35}
+.export-fixed.calendar-art .art-owner{font-size:16px}
+.export-fixed.calendar-art .art-month-mark{font-size:96px;letter-spacing:-5px}
+.export-fixed.calendar-art .art-weekdays{gap:5px;margin-bottom:5px}
+.export-fixed.calendar-art .art-weekdays span{font-size:16px;padding:9px 0;letter-spacing:.7px}
+.export-fixed.calendar-art .art-grid{gap:5px}
+.export-fixed.calendar-art .art-day{aspect-ratio:1/.82;min-width:0;padding:14px;overflow:hidden;border-radius:0!important}
+.export-fixed.calendar-art .art-day-number{font-size:16px;line-height:1.1}
+.export-fixed.calendar-art .art-shift{font-size:14px;letter-spacing:.35px;padding:8px 2px;line-height:1.15;white-space:nowrap;border-radius:0!important}
+.export-fixed.calendar-art .today-dot{width:6px;height:6px;right:9px;top:9px}
+.export-fixed.calendar-art .art-legend{gap:48px;padding:34px 0 8px}
+.export-fixed.calendar-art .art-legend span{font-size:16px;gap:11px;letter-spacing:.8px}
+.export-fixed.calendar-art .art-legend i{width:14px;height:14px}
+.export-fixed.calendar-art .art-footer{gap:18px;padding-top:22px;margin-top:28px;font-size:14px;letter-spacing:.3px}
+.export-fixed.calendar-art .art-footer .export-credit{font-size:17px;letter-spacing:.4px}
+
+/* Wallpaper export remains available, with a fixed canvas width as well. */
+.export-fixed.wallpaper-art{
+  width:360px!important;
+  max-width:none!important;
+  border-radius:24px!important;
+}
