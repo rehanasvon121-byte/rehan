@@ -26,4 +26,7 @@ Untuk membuat build produksi:
 npm run build
 ```
 
-Catatan: jadwal dan pengaturan yang sudah tersimpan di browser menggunakan key penyimpanan lama `HannShift-v1`, sehingga tidak diganti oleh revisi visual ini. Jika sebelumnya browser sudah menyimpan pilihan warna, pilihan tersimpan itu tetap dipertahankan; gunakan preset `Ice Blue` atau Reset desain untuk menerapkan palet baru.
+Catatan:
+- Font (DM Sans & Manrope) sekarang dipasang lewat paket `@fontsource`, jadi tidak butuh internet lagi. Setelah mengganti file, jalankan `npm install` sekali supaya paket font ikut terpasang.
+- Jadwal dan pengaturan disimpan di browser dengan key `HanShift-v1`. Data lama dengan key `HannShift-v1` tetap dibaca otomatis, jadi jadwal yang sudah tersimpan tidak hilang. Jika sebelumnya browser sudah menyimpan pilihan warna, pilihan tersimpan itu tetap dipertahankan; gunakan preset `Ice Blue` atau Reset desain untuk menerapkan palet baru.
+- Versi-versi lama file (`App-lama.tsx`, `style-lama.css`, dst.) dipindahkan ke folder `arsip-lama/` supaya tidak ikut dikompilasi.
